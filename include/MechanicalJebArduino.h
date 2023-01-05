@@ -16,3 +16,5 @@
 #include "Circuit/CircuitButton.h"
 
 #include "KSPBridge/KSPBridge.h"
+
+#include "AutoPilot/AutoPilot.h"

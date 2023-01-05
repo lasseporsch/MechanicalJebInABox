@@ -6,7 +6,7 @@
 // Copyright 2023 - 2023 Lasse Porsch
 //
 
-
+#pragma once
 
 enum class GlobalState {
   uninitialized,
@@ -14,9 +14,5 @@ enum class GlobalState {
   connectedToKSP,
   unableToLaunch,
   readyToLaunch,
-  flyingVertical,
-  flyingRollprogram,
-  flyingPitchingDownrange,
-  flyingGravityTurn,
-  orbitAchieved
+  autoPilotActive
 };

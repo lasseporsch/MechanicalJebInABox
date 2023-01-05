@@ -13,6 +13,7 @@
 GlobalState globalState = GlobalState::uninitialized;
 CircuitManager circuit = CircuitManager();
 KSPBridge kspBridge = KSPBridge();
+AutoPilot autoPilot = AutoPilot(&kspBridge);
 unsigned long launchTime;
 
 
@@ -94,6 +95,7 @@ void loop() {
 
         case GlobalState::readyToLaunch:
             if( circuit.stagingButton.state() == CircuitButtonState::ON ){
+                autoPilot.engage(3);
                 delay(10);
                 kspBridge.activate_sas();
                 delay(10);
@@ -101,50 +103,12 @@ void loop() {
                 delay(10);
                 kspBridge.launch_vessel();
                 kspBridge.ui_message("Liftoff and launch!");
-                globalState = GlobalState::flyingVertical;
+                globalState = GlobalState::autoPilotActive;
             }
             break;
 
-        case GlobalState::flyingVertical:
-            if(kspBridge.vessel_altitude_above_sealevel > 200) {
-                kspBridge.rotate_vessel(INT16_MAX / 4);
-                kspBridge.ui_message("Start rolling");
-                launchTime = millis();
-                globalState = GlobalState::flyingRollprogram;
-            }
-            break;
-
-        case GlobalState::flyingRollprogram:
-            if(millis() - launchTime > 2000) {
-                kspBridge.rotate_vessel(0);
-                kspBridge.ui_message("Stop rolling");
-
-                kspBridge.ui_message("Pitching downrange");
-                delay(10);
-                kspBridge.set_sas_mode(AP_PROGRADE);
-                delay(1000);
-                kspBridge.pitch_vessel(INT16_MAX);
-
-                launchTime = millis();
-                globalState = GlobalState::flyingPitchingDownrange;
-            }
-            break;
-
-        case GlobalState::flyingPitchingDownrange:
-            if(millis() - launchTime > 5000) {
-                kspBridge.pitch_vessel(0);
-                kspBridge.ui_message("Gravity turn initiated");
-
-                launchTime = millis();
-                globalState = GlobalState::flyingGravityTurn;
-            }
-            break;
-
-        case GlobalState::flyingGravityTurn:
-            break;
-
-        case GlobalState::orbitAchieved:
-            break;
+        case GlobalState::autoPilotActive:
+            autoPilot.loop();
 
         default:
             break;
