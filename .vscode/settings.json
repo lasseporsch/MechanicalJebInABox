@@ -1,0 +1,69 @@
+{
+	"files.exclude": {
+		"**/.git": true,
+		"**/.DS_Store": true
+	},
+	"files.trimTrailingWhitespace": true,
+	"psi-header.config": {
+		"forceToTop": true,
+        "blankLinesAfter": 2,
+        "author": "Lasse Porsch",
+        "authorEmail": "lasseporsch@gmail.com",
+		"copyrightHolder": "Lasse Porsch"
+	},
+	"psi-header.changes-tracking": {
+		"isActive": true,
+		"autoHeader": "autoSave",
+		"enforceHeader": true,
+		"include": [
+			"c",
+            "cpp"
+		],
+		"excludeGlob": [
+			"**/settings.json"
+		]
+	},
+    "psi-header.variables": [
+        ["project", "Mechanical Jeb in a Box"],
+		["projectCreationYear", "2023"]
+	],
+	"psi-header.lang-config": [
+		{
+			"language": "c",
+            "begin": "//",
+			"prefix": "//",
+            "end": "//",
+			"lineLength": 80,
+			"rootDirFileName": "platformio.ini",
+			"modAuthor": "Modified By:",
+			"modDate": "Last Modified:",
+			"modDateFormat": "dd/MM/yyyy hh:nn:ss",
+			"replace": [
+				"Filename:",
+				"Project"
+			],
+			"ignoreLines": []
+		},
+        {
+            "language": "cpp",
+            "mapTo": "c"
+        }
+	],
+	"psi-header.templates": [
+		{
+			"language": "c",
+			"template": [
+				" Project: <<projectname>>",
+				" File: <<filerelativepath>>",
+                "",
+                " Created by <<author>> on <<filecreated('Do, MMMM YYYY')>>",
+				" Copyright <<projectCreationYear>> - <<year>> <<copyrightholder>>"
+			]
+		},
+        {
+            "language": "cpp",
+            "mapTo": "c"
+        }
+	],
+	"editor.detectIndentation": false
+}
