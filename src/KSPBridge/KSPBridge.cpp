@@ -31,19 +31,23 @@ void KSPBridge::loop() {
 }
 
 
-void KSPBridge::launch_vessel() {
-    throttleMessage msg;
-    msg.throttle = INT16_MAX;
-    simpit.send(THROTTLE_MESSAGE, msg);
-    delay(10);
+void KSPBridge::stage_vessel() {
     simpit.activateAction(STAGE_ACTION);
 }
 
 void KSPBridge::activate_sas() {
     simpit.activateAction(SAS_ACTION);
 }
+void KSPBridge::deactivate_sas() {
+    simpit.deactivateAction(SAS_ACTION);
+}
 void KSPBridge::set_sas_mode(AutopilotMode mode) {
     simpit.setSASMode(mode);
+}
+void KSPBridge::throttle_vessel(int16_t thrust) {
+    throttleMessage msg;
+    msg.throttle = thrust;
+    simpit.send(THROTTLE_MESSAGE, msg);
 }
 
 void KSPBridge::rotate_vessel(int16_t rotation) {
@@ -54,7 +58,13 @@ void KSPBridge::rotate_vessel(int16_t rotation) {
 }
 void KSPBridge::pitch_vessel(int16_t pitch) {
     rotationMessage msg;
-    msg.setYaw(pitch);
+    msg.setPitch(pitch);
+
+    simpit.send(ROTATION_MESSAGE, msg);
+}
+void KSPBridge::yaw_vessel(int16_t yaw) {
+    rotationMessage msg;
+    msg.setYaw(yaw);
 
     simpit.send(ROTATION_MESSAGE, msg);
 }

@@ -30,10 +30,8 @@ void CircuitLCD16x2::setup() {
 void CircuitLCD16x2::println1(const char *text) {
     lcd.setCursor(0, 0);
     lcd.print(text);
-
 }
 void CircuitLCD16x2::println2(const char *text) {
     lcd.setCursor(0, 1);
     lcd.print(text);
-
 }

@@ -17,5 +17,7 @@ enum class AutoPilotState {
   flyingRollprogram,
   flyingPitchingDownrange,
   flyingGravityTurn,
+  flyingCoastToApoapsis,
+  flyingCircularizationBurn,
   orbitAchieved
 };
