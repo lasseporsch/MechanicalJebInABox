@@ -46,10 +46,6 @@ class AutoPilot {
         float current_throttle = 0;
         unsigned long time;
 
-        float pitch_correction = 0;
-        float starting_pitch = 0;
-        unsigned long pitch_correction_time = 0;
-        bool isPitching = false;
 
         void loop_countingDown(bool stateChanged);
         void loop_launching(bool stateChanged);

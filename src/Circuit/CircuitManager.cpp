@@ -16,11 +16,13 @@ void CircuitManager::setup() {
 
     stagingButton.setup();
     lcd16x2.setup();
+    altitudeRotaryEncoder.setup();
 };
 
 
 void CircuitManager::loop() {
     stagingButton.loop();
+    altitudeRotaryEncoder.loop();
 };
 
 

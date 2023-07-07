@@ -161,9 +161,21 @@ void AutoPilot::loop_flyingGravityTurn(bool stateChanged) {
     if( kspBridge->apoapsis > target_altitude ) {
         kspBridge->throttle_vessel(0);
         state = AutoPilotState::flyingCoastToApoapsis;
+    } else if( kspBridge->apoapsis > target_altitude * 0.95f ) {
+        kspBridge->throttle_vessel(INT16_MAX * 0.1);
+    } else if( kspBridge->apoapsis > target_altitude * 0.99f ) {
+        kspBridge->throttle_vessel(INT16_MAX * 0.001);
     }
+
 }
 void AutoPilot::loop_flyingCoastToApoapsis(bool stateChanged) {
+    static bool didFinishInitialPitchCorrection = false;
+    static bool isDoingMaintancenPitchCorrection = false;
+    static unsigned long startOfPitchCorrection = 0;
+    static float pitch_correction = 0;
+    static float starting_pitch = 0;
+    static unsigned long pitch_correction_time = 0;
+
     if( stateChanged ) {
         time = millis();
         delay(10);
@@ -178,47 +190,60 @@ void AutoPilot::loop_flyingCoastToApoapsis(bool stateChanged) {
         float dv_apoapsis = sqrt(kerbin_standard_gravitational_parameter * (2.0f / radius - 1.0f / semi_major_axis));
         float burn_dv = target_orbital_velocity - dv_apoapsis;
         float ship_mass = second_stage_dry_mass + 5.0f * (kspBridge->vessel_total_fuel + kspBridge->vessel_total_oxidizer);
-        float burn_time = ship_mass * (1.0f - exp(-burn_dv / second_stage_isp / kerbin_gravity)) * second_stage_isp * kerbin_gravity / second_stage_thrust;
-        circularization_burn_duration = burn_time;
+        circularization_burn_duration = ship_mass * (1.0f - exp(-burn_dv / second_stage_isp / kerbin_gravity)) * second_stage_isp * kerbin_gravity / second_stage_thrust;
 
         starting_pitch = kspBridge->vessel_pitch;
-        pitch_correction = kspBridge->vessel_surface_pitch + kspBridge->vessel_surface_pitch - kspBridge->vessel_pitch;
-        char line[100] = "";
-        delay(10);
-        // snprintf(line, sizeof(line), "Pitch: %lu", (unsigned long)kspBridge->vessel_pitch);
-        // kspBridge->ui_message(String(line));
-        // delay(10);
-        // snprintf(line, sizeof(line), "Orb. Pitch: %lu", (unsigned long)kspBridge->vessel_orbital_pitch);
-        // kspBridge->ui_message(String(line));
-        // delay(10);
-        // snprintf(line, sizeof(line), "Surf. Pitch: %lu", (unsigned long)kspBridge->vessel_surface_pitch);
-        // kspBridge->ui_message(String(line));
-        // delay(10);
-        snprintf(line, sizeof(line), "Burn dv: %lu", (unsigned long)burn_dv);
-        kspBridge->ui_message(String(line));
-        delay(10);
-        snprintf(line, sizeof(line), "Burn time: %lu", (unsigned long)burn_time);
-        kspBridge->ui_message(String(line));
-        delay(10);
-        snprintf(line, sizeof(line), "Ship mass: %lu", (unsigned long)ship_mass);
-        kspBridge->ui_message(String(line));
-
+        pitch_correction = kspBridge->vessel_pitch;
     }
 
-    if( (starting_pitch - kspBridge->vessel_pitch) < (pitch_correction / 2) ) {
-        kspBridge->yaw_vessel(INT16_MAX / 32);
-    } else {
-        if( pitch_correction_time == 0) {
-            pitch_correction_time = (millis() - time) * 2;
-        }
-        if( (millis() - time) < pitch_correction_time) {
-            kspBridge->yaw_vessel(INT16_MIN / 32);
+
+    if( !didFinishInitialPitchCorrection ) {
+        if( (starting_pitch - kspBridge->vessel_pitch) < (pitch_correction / 2) ) {
+            kspBridge->yaw_vessel(INT16_MAX / 32);
         } else {
-            kspBridge->yaw_vessel(0);
-            delay(10);
-            kspBridge->activate_sas();
-            delay(10);
-            kspBridge->set_sas_mode(AP_STABILITYASSIST);
+            if( pitch_correction_time == 0) {
+                pitch_correction_time = (millis() - time) * 2;
+            }
+            if( (millis() - time) < pitch_correction_time) {
+                kspBridge->yaw_vessel(INT16_MIN / 32);
+            } else {
+                kspBridge->yaw_vessel(0);
+                didFinishInitialPitchCorrection = true;
+            }
+        }
+    } else {
+        // Now we are near the final pitching angle zero. We maintain this angle
+        if( !isDoingMaintancenPitchCorrection ) {
+            if( kspBridge->vessel_pitch > 0.1) {
+                isDoingMaintancenPitchCorrection = true;
+                startOfPitchCorrection = millis();
+                kspBridge->yaw_vessel(INT16_MAX / 1024);
+                starting_pitch = kspBridge->vessel_pitch;
+            } else if( kspBridge->vessel_pitch < -0.1) {
+                kspBridge->yaw_vessel(INT16_MIN / 1024);
+                isDoingMaintancenPitchCorrection = true;
+                startOfPitchCorrection = millis();
+            } else {
+                kspBridge->yaw_vessel(0);
+            }
+        } else {
+            if( millis() - startOfPitchCorrection < 0.5) {
+                if(starting_pitch > 0) {
+                    kspBridge->yaw_vessel(INT16_MAX / 1024);
+                } else {
+                    kspBridge->yaw_vessel(INT16_MIN / 1024);
+                }
+            } else if( millis() - startOfPitchCorrection > 1) {
+                kspBridge->yaw_vessel(0);
+                isDoingMaintancenPitchCorrection = false;
+            }
+            else if( millis() - startOfPitchCorrection > 0.5) {
+                if(starting_pitch > 0) {
+                    kspBridge->yaw_vessel(INT16_MIN / 1024);
+                } else {
+                    kspBridge->yaw_vessel(INT16_MAX / 1024);
+                }
+            }
         }
     }
 
@@ -233,7 +258,8 @@ void AutoPilot::loop_flyingCircularizationBurn(bool stateChanged) {
         delay(10);
         kspBridge->ui_message("Initiating circularization burn");
     }
-    if( (millis() - time) / 1000 > circularization_burn_duration) {
+    if( (millis() - time) / 1000 > circularization_burn_duration - 0.2) {
+        kspBridge->throttle_vessel(0);
         state = AutoPilotState::orbitAchieved;
     }
     // We burn until we raised the OTHER side of the orbit to the target altitude.

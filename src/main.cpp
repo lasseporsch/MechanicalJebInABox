@@ -16,6 +16,9 @@ KSPBridge kspBridge = KSPBridge();
 AutoPilot autoPilot = AutoPilot(&kspBridge);
 unsigned long launchTime;
 
+uint32_t target_orbit_altitude_km = 100;
+const uint32_t min_orbit_altitude_km = 100;
+const uint32_t max_orbit_altitude_km = 1000;
 
 // For some reason this callback function doesn't work unless it resides right here in main.cpp
 // Would be nicer if it were somewhere close to the KSPBridge definition, though.
@@ -170,6 +173,7 @@ void print_vessel_orientation() {
 void loop() {
     circuit.loop(); // Provides fresh reads from all circut elements
     kspBridge.simpit.update(); // Retrieves all messages from KSP from the queue and processes them with messageHandler
+    char line[17] = "";
 
     switch( globalState ) {
         case GlobalState::connectedToKSP:
@@ -197,14 +201,19 @@ void loop() {
             break;
 
         case GlobalState::readyToLaunch:
-            circuit.lcd16x2.println1("Ready to launch ");
-            circuit.lcd16x2.println2("Configure orbit");
             if( kspBridge.vessel_situation != VesselSituation::prelaunch) {
                 globalState = GlobalState::unableToLaunch;
             }
+            if( circuit.altitudeRotaryEncoder.step != 0) {
+                uint32_t new_altitude = target_orbit_altitude_km + circuit.altitudeRotaryEncoder.step * 10;
+                target_orbit_altitude_km = min(max(new_altitude, min_orbit_altitude_km), max_orbit_altitude_km);
+            }
+            circuit.lcd16x2.println1("Ready to launch ");
+            snprintf(line, sizeof(line), "Orbit: %7dkm", (int) target_orbit_altitude_km);
+            circuit.lcd16x2.println2(line);
 
             if( circuit.stagingButton.state() == CircuitButtonState::ON ){
-                autoPilot.set_target_altitude(100000);
+                autoPilot.set_target_altitude(target_orbit_altitude_km * 1000);
                 autoPilot.set_target_inclination(59);
                 autoPilot.engage(3);
                 globalState = GlobalState::autoPilotActive;
