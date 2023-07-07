@@ -65,5 +65,27 @@
             "mapTo": "c"
         }
 	],
-	"editor.detectIndentation": false
+    "editor.detectIndentation": false,
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default"
+            },
+            "previewLimit": 50,
+            "server": "192.168.1.222",
+            "port": 3306,
+            "driver": "MariaDB",
+            "name": "Wordpress (VM)",
+            "database": "wordpress",
+            "username": "root",
+            "password": "7cpG7kyu"
+        },
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "Shinkansen GRDB",
+            "database": "/Users/lporsch/Library/Developer/CoreSimulator/Devices/42CF2336-3CA4-4997-8690-CE739EB57964/data/Containers/Data/Application/A01B17F4-1860-4995-9931-413C5CA3B60E/Documents/ShinkansenDB"
+        }
+    ]
 }
